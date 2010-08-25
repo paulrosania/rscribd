@@ -120,11 +120,14 @@ module Scribd
       if file = @attributes[:file] then
         fields.delete :file
         is_file_object = file.is_a?(File)
-        file_path = is_file_object ? file.path : file
-        ext = File.extname(file_path).gsub(/^\./, '')
-        ext = nil if ext == ''
-        fields[:doc_type] = fields.delete(:type)
-        fields[:doc_type] ||= ext
+        
+        unless fields[:doc_type] = fields.delete(:type)
+          file_path = is_file_object ? file.path : file
+          ext = File.extname(file_path).gsub(/^\./, '')
+          ext = nil if ext == ''
+          fields[:doc_type] = ext
+        end
+        
         fields[:doc_type].downcase! if fields[:doc_type]
         fields[:rev_id] = fields.delete(:doc_id)
 
