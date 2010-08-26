@@ -31,7 +31,6 @@ Gem::Specification.new do |s|
      "lib/scribd/security.rb",
      "lib/scribd/user.rb",
      "lib/support/extensions.rb",
-     "lib/support/multipart_hack.rb",
      "rscribd.gemspec",
      "sample/01_upload.rb",
      "sample/02_user.rb",
@@ -44,6 +43,7 @@ Gem::Specification.new do |s|
      "spec/resource_spec.rb",
      "spec/rscribd_spec.rb",
      "spec/security_spec.rb",
+     "spec/spec_helper.rb",
      "spec/user_spec.rb"
   ]
   s.homepage = %q{http://www.scribd.com/developers}
@@ -61,6 +61,7 @@ Gem::Specification.new do |s|
      "spec/resource_spec.rb",
      "spec/rscribd_spec.rb",
      "spec/security_spec.rb",
+     "spec/spec_helper.rb",
      "spec/user_spec.rb"
   ]
 
