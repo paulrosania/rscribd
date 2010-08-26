@@ -2,7 +2,7 @@ require 'uri'
 require 'open-uri'
 
 module Scribd
-  
+
   # A document as shown on the Scribd website. API programs can upload documents
   # from files or URLs, tag them, and change their settings. An API program can
   # access any document, but it can only modify documents owned by the logged-in
@@ -58,14 +58,14 @@ module Scribd
   # that have special meaning:
   #
   # | @thumbnail@ | Set this to the path to, a @File@ object for, or the URL string for an image file you want to act as the document's thumbnail. Note that for URLs, the thumbnail will be downloaded to memory before being transmitted to the Scribd API server. |
-  
+
   class Document < Resource
-    
+
     # Creates a new, unsaved document with the given attributes. The document
     # must be saved before it will appear on the website.
     #
     # @param [Hash] options The document's attributes.
-    
+
     def initialize(options={})
       super
       @download_urls = Hash.new
@@ -78,7 +78,7 @@ module Scribd
         @attributes = options
       end
     end
-    
+
     # For document objects that have not been saved for the first time, uploads
     # the document, sets its attributes, and saves it. Otherwise, updates any
     # changed attributes and saves it. Returns true if the save completed
@@ -102,12 +102,12 @@ module Scribd
     # document with no associated user (i.e., one retrieved from the {.find}
     # method).
     # @return [true, false] Whether or not the upload was successful.
-    
+
     def save
       if not created? and @attributes[:file].nil? then
         raise "'file' attribute must be specified for new documents"
       end
-      
+
       if created? and @attributes[:file] and (@attributes[:owner].nil? or @attributes[:owner].session_key.nil?) then
         raise PrivilegeError, "The current API user is not the owner of this document"
       end
@@ -120,14 +120,14 @@ module Scribd
         fields[:session_key] = fields.delete(:owner).session_key if fields[:owner]
         fields.delete :file
         is_file_object = file.respond_to?(:read)
-        
+
         unless fields[:doc_type] = fields.delete(:type)
           file_path = is_file_object ? file.path : file
           ext = File.extname(file_path).gsub(/^\./, '')
           ext = nil if ext == ''
           fields[:doc_type] = ext
         end
-        
+
         fields[:doc_type].downcase! if fields[:doc_type]
         fields[:rev_id] = fields.delete(:doc_id)
 
@@ -146,7 +146,7 @@ module Scribd
           file_obj.close unless is_file_object
         end
       end
-      
+
       fields = @attributes.dup # fields is what we send to the server
 
       if response then
@@ -173,28 +173,28 @@ module Scribd
         API.instance.send_request('docs.uploadThumb', :file => file, :doc_id => self.id)
         file.close
       end
-      
+
       fields.delete :access if fields[:file] # when uploading a doc, don't send access twice
       fields.delete :file
       fields.delete :type
       fields.delete :conversion_status
-      
+
       changed_attributes = fields.dup # changed_attributes is what we will stick into @attributes once we update remotely
-      
+
       fields[:session_key] = fields[:owner].session_key if fields[:owner]
       changed_attributes[:owner] ||= API.instance.user
       fields[:doc_ids] = self.id
-      
+
       fields.delete :owner
-      
+
       API.instance.send_request('docs.changeSettings', fields)
-      
+
       @attributes.update(changed_attributes)
-      
+
       @saved = true
       return true
     end
-    
+
     # Quickly updates an array of documents with the given attributes. The
     # documents can have different owners, but all of them must be modifiable.
     #
@@ -204,13 +204,13 @@ module Scribd
     # @raise [ArgumentError] If an invalid value for @options@ is given.
     # @raise [ArgumentError] If one or more documents cannot be modified because
     # it has no owner (e.g., it was retrieved from a call to {.find}).
-    
+
     def self.update_all(docs, options)
       raise ArgumentError, "docs must be an array" unless docs.kind_of? Array
       raise ArgumentError, "docs must consist of Scribd::Document objects" unless docs.all? { |doc| doc.kind_of? Document }
       raise ArgumentError, "You can't modify one or more documents" if docs.any? { |doc| doc.owner.nil? }
       raise ArgumentError, "options must be a hash" unless options.kind_of? Hash
-      
+
       docs_by_user = docs.inject(Hash.new { |hash, key| hash[key] = Array.new }) { |hash, doc| hash[doc.owner] << doc; hash }
       docs_by_user.each { |user, doc_list| API.instance.send_request 'docs.changeSettings', options.merge(:doc_ids => doc_list.collect(&:id).join(','), :session_key => user.session_key) }
     end
@@ -248,11 +248,11 @@ module Scribd
     #
     # @raise [ArgumentError] If neither of the two correct argument forms is
     # provided.
-    
+
     def self.find(options={})
       doc_id = options.kind_of?(Integer) ? options : nil
       raise ArgumentError, "You must specify a query or document ID" unless doc_id or (options.kind_of?(Hash) and options[:query])
-      
+
       if doc_id then
         response = API.instance.send_request('docs.getSettings', :doc_id => doc_id)
         return Document.new(:xml => response.elements['/rsp'])
@@ -329,7 +329,7 @@ module Scribd
     # every time it's queried.
     #
     # @return [String] The document's conversion status.
-    
+
     def conversion_status
       response = API.instance.send_request('docs.getConversionStatus', :doc_id => self.id)
       response.elements['/rsp/conversion_status'].text
@@ -355,40 +355,40 @@ module Scribd
     #
     # @return [true, false] Whether or not the document was successfully
     # deleted.
-    
+
     def destroy
       response = API.instance.send_request('docs.delete', :doc_id => self.id)
       return response.elements['/rsp'].attributes['stat'] == 'ok'
     end
-    
+
     # Grants a user access to this document.
     #
     # @param [String] user_identifier The user identifier as used in your embed
     # code.
     # @see Scribd::Security.grant_access
-    
+
     def grant_access(user_identifier)
       Scribd::Security.grant_access user_identifier, self
     end
-    
+
     # Revokes access to this document from a user.
     #
     # @param [String] user_identifier The user identifier as used in your embed
     # code.
     # @see Scribd::Security.revoke_access
-    
+
     def revoke_access(user_identifier)
       Scribd::Security.revoke_access user_identifier, self
     end
-    
+
     # @return [Array<String>] A list of user identifiers that have access to
     # this document.
     # @see Scribd::Security.document_access_list
-    
+
     def access_list
       Scribd::Security.document_access_list(self)
     end
-    
+
     # Returns a URL for a thumbnail image of this document.
     #
     # @param [Hash] options Options for customizing the thumbnail image.
@@ -403,11 +403,11 @@ module Scribd
     # vice versa.
     # @raise [ArgumentError] If @:width@ and @:size@ are both specified.
     # @raise [ArgumentError] If @:size@ is not a two-item array.
-    
+
     def thumbnail_url(options={})
       self.class.thumbnail_url self.id, options
     end
-    
+
     # Returns a URL for a thumbnail image of a given document. The document must
     # be public, or you must own it.
     #
@@ -424,7 +424,7 @@ module Scribd
     # vice versa.
     # @raise [ArgumentError] If @:width@ and @:size@ are both specified.
     # @raise [ArgumentError] If @:size@ is not a two-item array.
-    
+
     def self.thumbnail_url(id, options={})
       w = h = nil
       if (options[:width] or options[:height]) and options[:size] then
@@ -439,13 +439,13 @@ module Scribd
       elsif options[:width] or options[:height] then
         raise ArgumentError, "Must specify both width and height, or neither"
       end
-      
+
       response = API.instance.send_request('thumbnail.get', { :doc_id => id, :width => w, :height => h, :page => options[:page] }.compact)
       response.elements['/rsp/thumbnail_url'].text
     end
-    
+
     # @return The @document_id@ attribute.
-    
+
     def id
       self.doc_id
     end
@@ -455,7 +455,7 @@ module Scribd
       # don't allow them to set the owner if the document is saved
       saved? ? raise(NotImplementedError, "Cannot change a document's owner once the document has been saved") : super
     end
-    
+
     # Retrieves a document's download URL. You can provide a format for the
     # download. Valid formats are listed in the online API documentation.
     #
@@ -464,7 +464,7 @@ module Scribd
     #
     # @param [String] format The download format.
     # @return [String] The download URL.
-    
+
     def download_url(format='original')
       @download_urls[format] ||= begin
         response = API.instance.send_request('docs.getDownloadUrl', :doc_id => self.id, :doc_type => format)
