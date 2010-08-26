@@ -6,7 +6,6 @@ module Scribd
 end
 
 require 'support/extensions'
-require 'support/multipart_hack'
 require 'scribd/errors'
 require 'scribd/api'
 require 'scribd/resource'

@@ -113,13 +113,13 @@ module Scribd
       end
 
       # Make a request form
-      response = nil
-      fields = @attributes.dup
-      fields.delete :thumbnail
-      fields[:session_key] = fields.delete(:owner).session_key if fields[:owner]
       if file = @attributes[:file] then
+        response = nil
+        fields = @attributes.dup
+        fields.delete :thumbnail
+        fields[:session_key] = fields.delete(:owner).session_key if fields[:owner]
         fields.delete :file
-        is_file_object = file.is_a?(File)
+        is_file_object = file.respond_to?(:read)
         
         unless fields[:doc_type] = fields.delete(:type)
           file_path = is_file_object ? file.path : file
@@ -145,16 +145,16 @@ module Scribd
           response = API.instance.send_request 'docs.upload', fields
           file_obj.close unless is_file_object
         end
+
+        if response then
+          # Extract our response
+          xml = response.get_elements('/rsp')[0]
+          load_attributes(xml)
+          @created = true
+        end
       end
       
       fields = @attributes.dup # fields is what we send to the server
-
-      if response then
-        # Extract our response
-        xml = response.get_elements('/rsp')[0]
-        load_attributes(xml)
-        @created = true
-      end
 
       if thumb = fields.delete(:thumbnail) then
         begin
