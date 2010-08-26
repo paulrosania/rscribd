@@ -14,6 +14,7 @@ begin
     gemspec.rubyforge_project = "rscribd"
     
     gemspec.add_dependency 'mime-types'
+    gemspec.add_dependency 'multipart-post'
     gemspec.add_development_dependency "rspec"
     gemspec.add_development_dependency "yard"
   end
@@ -29,7 +30,7 @@ task :default => :spec
 
 desc "Verify gem specs"
 Spec::Rake::SpecTask.new do |t|
-  t.spec_files = FileList['spec/*.rb']
+  t.spec_files = FileList['spec/*_spec.rb']
   t.spec_opts = [ '-cfs' ]
 end
 

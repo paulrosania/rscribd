@@ -1,6 +1,7 @@
 require 'singleton'
 require 'digest/md5'
 require 'rexml/document'
+require 'net/http/post/multipart'
 
 module Scribd
   
@@ -124,8 +125,7 @@ module Scribd
       # API methods can be SLOW.  Make sure this is set to something big to prevent spurious timeouts
       http.read_timeout = 15*60
 
-      request = Net::HTTP::Post.new(REQUEST_PATH)
-      request.multipart_params = fields
+      request = Net::HTTP::Post::Multipart.new(REQUEST_PATH, fields)
 
       tries = TRIES
       begin

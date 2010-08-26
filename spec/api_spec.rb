@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 old_dir = Dir.getwd
 Dir.chdir(File.join(File.dirname(__FILE__), '..', 'lib'))
 require 'rscribd'
@@ -64,9 +66,6 @@ describe Scribd::API do
           @http = Net::HTTP.new('http://www.example.com', 80)
           @http.stub!(:request).and_return(@response)
           Net::HTTP.stub!(:new).and_return(@http)
-          
-          @request = Net::HTTP::Post.new('/test')
-          Net::HTTP::Post.stub!(:new).and_return(@request)
         end
         
         it "should set a nice, long read timeout" do
@@ -76,16 +75,8 @@ describe Scribd::API do
         
         it "should set the multipart parameters to the given fields" do
           fields = { :field1 => 1, :field2 => 'hi' }
+          Net::HTTP::Post::Multipart.should_receive(:new).with('/api', hash_including(fields.stringify_keys))
           @api.send_request('test', fields)
-          body = @request.body
-          fields.each do |key, value|
-            serial_str = <<-EOF
-Content-Disposition: form-data; name=#{key.to_s.inspect}
-
-#{value.to_s}
-            EOF
-            body.should include(serial_str.gsub(/\n/, "\r\n"))
-          end
         end
         
         # it "should attempt to make the request 3 times" do
