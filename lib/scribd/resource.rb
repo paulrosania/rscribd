@@ -1,5 +1,5 @@
 module Scribd
-  
+
   # Describes a remote object that the Scribd API lets you interact with. All
   # such objects are modeled after the Active Record ORM approach.
   #
@@ -33,83 +33,83 @@ module Scribd
   # reflect the changes you made in its API instance.
   #
   # @abstract
-  
+
   class Resource
-    
+
     # Initializes instance variables.
     #
     # @param [Hash] options Initial attributes for the new object.
-    
+
     def initialize(options={})
       @saved = false
       @created = false
       @attributes = Hash.new
     end
-    
+
     # Creates a new instance with the given attributes, saves it immediately,
     # and returns it. You should call its {#created?} method if you need to
     # verify that the object was saved successfully.
     #
     # @param [Hash] options Initial attributes for the new object.
     # @return [Scribd::Resource] The new object.
-    
+
     def self.create(options={})
       obj = new(options)
       obj.save
       obj
     end
-    
+
     # @abstract This method is implemented by subclasses.
 
     def save
       raise NotImplementedError, "Cannot save #{self.class.to_s} objects"
     end
-    
+
     # @abstract This method is implemented by subclasses.
 
     def self.find(options)
       raise NotImplementedError, "Cannot find #{self.class.to_s} objects"
     end
-    
+
     # @abstract This method is implemented by subclasses.
-    
+
     def destroy
       raise NotImplementedError, "Cannot destroy #{self.class.to_s} objects"
     end
-    
+
     # @return [true, false] Whether this resource's attributes have been updated
     # remotely, and thus their local values reflect the remote values.
-    
+
     def saved?
       @saved
     end
-    
+
     # @return [true, false] Whether this resource has been created remotely, and
     # corresponds to something on the Scribd website.
-    
+
     def created?
       @created
     end
-    
+
     # Returns the value of an attribute.
     #
     # @param [#to_sym] attribute The attribute to read.
     # @return [String] The value of the attribute.
     # @return [nil] If the attribute could not be read.
     # @raise [ArgumentError] If an invalid value for @attribute@ is given.
-    
+
     def read_attribute(attribute)
       raise ArgumentError, "Attribute must respond to to_sym" unless attribute.respond_to? :to_sym
       @attributes[attribute.to_sym]
     end
-    
+
     # Returns a map of attributes to their values, given an array of attributes.
     # Attributes that cannot be read are ignored.
     #
     # @param [Enumerable<String, Symbol>] attributes The attributes to read.
     # @return [Hash<Symbol -> String] The attribute values.
     # @raise [ArgumentError] If an invalid value for @attributes@ is provided.
-    
+
     def read_attributes(attributes)
       raise ArgumentError, "Attributes must be listed in an Enumeration" unless attributes.kind_of?(Enumerable)
       raise ArgumentError, "All attributes must respond to to_sym" unless attributes.all? { |a| a.respond_to? :to_sym }
@@ -117,7 +117,7 @@ module Scribd
       values = @attributes.values_at(*keys)
       keys.zip(values).to_hsh
     end
-    
+
     # Assigns values to attributes. Takes a hash that specifies the
     # attribute-value pairs to update. Does not perform a save. Non-writable
     # attributes are ignored.
@@ -125,13 +125,13 @@ module Scribd
     # @param [Hash<#to_sym -> #to_s>] values The values to update and their new
     # values.
     # @raise [ArgumentError] If an invalid value for @values@ is provided.
-    
+
     def write_attributes(values)
       raise ArgumentError, "Values must be specified through a hash of attributes" unless values.kind_of? Hash
       raise ArgumentError, "All attributes must respond to to_sym" unless values.keys.all? { |a| a.respond_to? :to_sym }
       @attributes.update values.map { |k,v| [ k.to_sym, v ] }.to_hsh
     end
-    
+
     # Gets or sets attributes for the resource. Any named attribute can be
     # retrieved for changed through a method call, even if it doesn't exist.
     # Such attributes will be ignored and purged when the document is saved:
@@ -155,14 +155,14 @@ module Scribd
         @attributes[meth]
       end
     end
-    
+
     # @private
     def inspect
       "#<#{self.class.to_s} #{@attributes.select { |k, v| not v.nil? }.collect { |k,v| k.to_s + '=' + v.to_s }.join(', ')}>"
     end
-    
+
     private
-    
+
     def load_attributes(xml)
       @attributes.clear
       xml.each_element do |element|
@@ -171,7 +171,7 @@ module Scribd
         else
           element.text
         end
-        
+
         @attributes[element.name.to_sym] = if element.attributes['type'] == 'integer' then
           text.to_i
         elsif element.attributes['type'] == 'float' then
